@@ -30,19 +30,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check SDK and compiler versions
+      - name: Check SDK versions
         run: |
           docker run --rm \
+            --entrypoint /bin/bash \
             "${{ env.SDK_IMAGE }}" \
-            sh -c '
+            -c '
+              set -e
+
               echo "=== NCS revision ==="
               git -C /workdir/nrf rev-parse HEAD
+              git -C /workdir/nrf describe --tags --always
 
               echo "=== Zephyr revision ==="
               git -C /workdir/zephyr rev-parse HEAD
-
-              echo "=== Compiler version ==="
-              arm-zephyr-eabi-gcc --version | head -n 1
+              git -C /workdir/zephyr describe --tags --always
             '
 
       # 2. Build using nRF Connect SDK
