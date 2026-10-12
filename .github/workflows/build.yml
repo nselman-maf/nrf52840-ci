@@ -15,7 +15,8 @@ permissions:
 
 env:
   BOARD: nrf52840dk/nrf52840
-  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9-branch
+  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9.0base-branch
+    # v2.9-branch
 
 jobs:
   build:
@@ -29,23 +30,6 @@ jobs:
       # 1. Checkout application source code
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Check SDK versions
-        run: |
-          docker run --rm \
-            --entrypoint /bin/bash \
-            "${{ env.SDK_IMAGE }}" \
-            -c '
-              set -e
-
-              echo "=== NCS revision ==="
-              git -C /workdir/nrf rev-parse HEAD
-              git -C /workdir/nrf describe --tags --always
-
-              echo "=== Zephyr revision ==="
-              git -C /workdir/zephyr rev-parse HEAD
-              git -C /workdir/zephyr describe --tags --always
-            '
 
       # 2. Build using nRF Connect SDK
       - name: Build firmware
