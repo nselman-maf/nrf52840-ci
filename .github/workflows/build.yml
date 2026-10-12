@@ -42,10 +42,10 @@ jobs:
       # 3. Verify build output
       - name: Check firmware files
         run: |
-          ls -lh build/zephyr/
-          test -f build/zephyr/zephyr.hex
-          test -f build/zephyr/zephyr.bin
-          test -f build/zephyr/zephyr.elf
+          ls -lh build/nrf52840-ci/zephyr/
+          test -f build/nrf52840-ci/zephyr/zephyr.hex
+          test -f build/nrf52840-ci/zephyr/zephyr.bin
+          test -f build/nrf52840-ci/zephyr/zephyr.elf
 
       # 4. Upload compiled firmware
       - name: Upload firmware artifacts
@@ -53,9 +53,9 @@ jobs:
         with:
           name: nrf52840dk-firmware
           path: |
-            build/zephyr/zephyr.hex
-            build/zephyr/zephyr.bin
-            build/zephyr/zephyr.elf
-            build/zephyr/zephyr.map
+            build/nrf52840-ci/zephyr/zephyr.hex
+            build/nrf52840-ci/zephyr/zephyr.bin
+            build/nrf52840-ci/zephyr/zephyr.elf
+            build/nrf52840-ci/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
