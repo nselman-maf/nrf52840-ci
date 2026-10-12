@@ -1,0 +1,61 @@
+
+name: Build nRF52840 DK Firmware
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BOARD: nrf52840dk/nrf52840
+  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9-branch
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-22.04
+
+    steps:
+      # 1. Checkout application source code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Build using nRF Connect SDK
+      - name: Build firmware
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workdir/project" \
+            "${{ env.SDK_IMAGE }}" \
+            west build \
+              -p always \
+              -b "${{ env.BOARD }}" \
+              /workdir/project \
+              --build-dir /workdir/project/build
+
+      # 3. Verify build output
+      - name: Check firmware files
+        run: |
+          ls -lh build/zephyr/
+          test -f build/zephyr/zephyr.hex
+          test -f build/zephyr/zephyr.bin
+          test -f build/zephyr/zephyr.elf
+
+      # 4. Upload compiled firmware
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nrf52840dk-firmware
+          path: |
+            build/zephyr/zephyr.hex
+            build/zephyr/zephyr.bin
+            build/zephyr/zephyr.elf
+            build/zephyr/zephyr.map
+          if-no-files-found: error
+          retention-days: 30
