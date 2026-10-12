@@ -22,6 +22,9 @@ jobs:
     name: Build Firmware
     runs-on: ubuntu-22.04
 
+    outputs:
+      firmware_version: ${{ steps.version.outputs.firmware_version }}
+
     steps:
       # 1. Checkout application source code
       - name: Checkout repository
@@ -54,6 +57,19 @@ jobs:
           test -f build/project/zephyr/zephyr.hex
           test -f build/project/zephyr/zephyr.bin
           test -f build/project/zephyr/zephyr.elf
+      
+      - name: Get firmware version
+        id: version
+        run: |
+          VERSION_MAJOR=$(awk -F '=' '/^VERSION_MAJOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          VERSION_MINOR=$(awk -F '=' '/^VERSION_MINOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          PATCHLEVEL=$(awk -F '=' '/^PATCHLEVEL/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          VERSION_TWEAK=$(awk -F '=' '/^VERSION_TWEAK/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+
+          VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}+${VERSION_TWEAK}"
+
+          echo "Firmware version: $VERSION"
+          echo "firmware_version=$VERSION" >> "$GITHUB_OUTPUT"
 
       # 4. Upload compiled firmware
       - name: Upload firmware artifacts
@@ -85,10 +101,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: nightly-${{ github.sha }}
-          name: Nightly Build ${{ github.sha }}
+          tag_name: v${{ needs.build.outputs.firmware_version }}
+          name: Release v${{ needs.build.outputs.firmware_version }}
+          target_commitish: ${{ github.sha }}
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             artifacts/**/*.hex
             artifacts/**/*.bin
