@@ -16,7 +16,7 @@ The source code shows how to:
 #. Configure the GPIO pin as an output
 #. Toggle the pin forever
 
-See :zephyr:code-sample:`pwm-blinky` for a similar sample that uses the PWM API instead.
+See :zephyr:code-sample:`pwm-blinky` for a similar sample that uses the PWM API ins
 
 .. _blinky-sample-requirements:
 
