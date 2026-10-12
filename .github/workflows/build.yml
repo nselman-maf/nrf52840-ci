@@ -38,6 +38,14 @@ jobs:
               -b "${{ env.BOARD }}" \
               /workdir/project \
               --build-dir /workdir/project/build
+      - name: Locate generated firmware
+        run: |
+          echo "Searching for firmware files..."
+          find build -type f \( \
+            -name "*.hex" -o \
+            -name "*.bin" -o \
+            -name "*.elf" \
+          \) -print
 
       # 3. Verify build output
       - name: Check firmware files
