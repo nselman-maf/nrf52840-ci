@@ -67,48 +67,32 @@ jobs:
             build/project/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
-          
-      # 5. Generate unique version tag
-      - name: Generate release version
-        if: github.event_name != 'pull_request'
-        id: version
-        run: |
-          TAG="v1.0.${{ github.run_number }}-${{ github.run_attempt }}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Release version: $TAG"
 
-      # 6. Create and push Git tag
-      - name: Create Git tag
-        if: github.event_name != 'pull_request'
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: nightly-${{ github.sha }}
+          name: Nightly Build ${{ github.sha }}
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.hex
+            artifacts/**/*.bin
+            artifacts/**/*.elf
+            artifacts/**/*.map
         env:
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git tag -a "$RELEASE_TAG" \
-            -m "Firmware release $RELEASE_TAG"
-
-          git push origin "$RELEASE_TAG"
-
-      # 7. Create GitHub Release
-      - name: Create GitHub Release
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          gh release create "$RELEASE_TAG" \
-            --title "nRF52840 DK $RELEASE_TAG" \
-            --generate-notes \
-            --verify-tag
-
-      # 8. Upload firmware to Release
-      - name: Upload Release assets
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          gh release upload "$RELEASE_TAG" firmware/*
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
