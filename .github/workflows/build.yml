@@ -15,7 +15,7 @@ permissions:
 
 env:
   BOARD: nrf52840dk/nrf52840
-  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9.0
+  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9-branch
     # v2.9-branch
 
 jobs:
