@@ -215,9 +215,9 @@ jobs:
         with:
           name: nrf52840dk-firmware
           path: |
-            build/project/nrf52840-ci/zephyr.hex
-            build/project/nrf52840-ci/zephyr.bin
-            build/project/nrf52840-ci/zephyr.elf
-            build/project/nrf52840-ci/zephyr.map
+            build/nrf52840-ci/zephyr/zephyr.hex
+            build/nrf52840-ci/zephyr/zephyr.bin
+            build/nrf52840-ci/zephyr/zephyr.elf
+            build/nrf52840-ci/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
