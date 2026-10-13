@@ -1,153 +1,211 @@
 
+# name: Build nRF52840 DK Firmware
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   # pull_request:
+#   #   branches:
+#   #     - main
+#   workflow_dispatch:
+
+# permissions:
+#   contents: write
+
+# env:
+#   BOARD: nrf52840dk/nrf52840
+#   SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9-branch
+#     # v2.9-branch
+
+# jobs:
+#   build:
+#     name: Build Firmware
+#     runs-on: ubuntu-22.04
+
+#     outputs:
+#       firmware_version: ${{ steps.version.outputs.firmware_version }}
+
+#     steps:
+#       # 1. Checkout application source code
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       # 2. Build using nRF Connect SDK
+#       - name: Build firmware
+#         run: |
+#           docker run --rm \
+#             -v "${{ github.workspace }}:/workdir/project" \
+#             "${{ env.SDK_IMAGE }}" \
+#             west build \
+#               -p always \
+#               -b "${{ env.BOARD }}" \
+#               /workdir/project \
+#               --build-dir /workdir/project/build \
+#               -- -DNCS_TOOLCHAIN_VERSION="NONE" \
+#               -DCONFIG_DEBUG_THREAD_INFO=y
+
+#       - name: Check SDK repository revisions
+#         run: |
+#           docker run --rm \
+#             --entrypoint /bin/bash \
+#             "${{ env.SDK_IMAGE }}" \
+#             -c '
+#               set -e
+
+#               # Initialize Nordic toolchain environment
+#               source <(nrfutil toolchain-manager env --as-script)
+
+#               cd /workdir
+
+#               echo "=== Available tools ==="
+#               command -v git
+#               command -v west
+
+#               echo "=== NCS revision ==="
+#               git -C nrf rev-parse HEAD
+
+#               echo "=== Zephyr revision ==="
+#               git -C zephyr rev-parse HEAD
+
+#               echo "=== All SDK repository revisions ==="
+#               west list -f "{name}: {sha}"
+#             '
+
+#       # - name: Build firmware
+#       #   uses: ./.github/actions/ncs-build
+#       #   with:
+#       #     board: nrf52840dk/nrf52840
+#       #     build_dir: build
+
+#       - name: Locate generated firmware
+#         run: |
+#           echo "Searching for firmware files..."
+#           find build -type f \( \
+#             -name "*.hex" -o \
+#             -name "*.bin" -o \
+#             -name "*.elf" \
+#           \) -print
+
+#       # 3. Verify build output
+#       - name: Check firmware files
+#         run: |
+#           ls -lh build/project/zephyr/
+#           test -f build/project/zephyr/zephyr.hex
+#           test -f build/project/zephyr/zephyr.bin
+#           test -f build/project/zephyr/zephyr.elf
+      
+#       - name: Get firmware version
+#         id: version
+#         run: |
+#           VERSION_MAJOR=$(awk -F '=' '/^VERSION_MAJOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+#           VERSION_MINOR=$(awk -F '=' '/^VERSION_MINOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+#           PATCHLEVEL=$(awk -F '=' '/^PATCHLEVEL/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+#           VERSION_TWEAK=$(awk -F '=' '/^VERSION_TWEAK/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+
+#           VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}+${VERSION_TWEAK}"
+
+#           echo "Firmware version: $VERSION"
+#           echo "firmware_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+#       # 4. Upload compiled firmware
+#       - name: Upload firmware artifacts
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: nrf52840dk-firmware
+#           path: |
+#             build/project/zephyr/zephyr.hex
+#             build/project/zephyr/zephyr.bin
+#             build/project/zephyr/zephyr.elf
+#             build/project/zephyr/zephyr.map
+#           if-no-files-found: error
+#           retention-days: 30
+
+#   create-release:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+#     steps:
+#       - name: Download all artifacts
+#         uses: actions/download-artifact@v4
+#         with:
+#           path: artifacts
+
+#       - name: Display structure of downloaded files
+#         run: ls -R artifacts
+
+#       - name: Create Release
+#         uses: softprops/action-gh-release@v1
+#         with:
+#           tag_name: v${{ needs.build.outputs.firmware_version }}
+#           name: Release v${{ needs.build.outputs.firmware_version }}
+#           target_commitish: ${{ github.sha }}
+#           prerelease: false
+#           generate_release_notes: true
+#           fail_on_unmatched_files: true
+#           files: |
+#             artifacts/**/*.hex
+#             artifacts/**/*.bin
+#             artifacts/**/*.elf
+#             artifacts/**/*.map
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
 name: Build nRF52840 DK Firmware
 
 on:
   push:
     branches:
       - main
-  # pull_request:
-  #   branches:
-  #     - main
   workflow_dispatch:
-
-permissions:
-  contents: write
-
-env:
-  BOARD: nrf52840dk/nrf52840
-  SDK_IMAGE: nordicplayground/nrfconnect-sdk:v2.9-branch
-    # v2.9-branch
 
 jobs:
   build:
-    name: Build Firmware
     runs-on: ubuntu-22.04
 
-    outputs:
-      firmware_version: ${{ steps.version.outputs.firmware_version }}
+    container:
+      image: ghcr.io/nrfconnect/sdk-nrf-toolchain@sha256:7e9b61475ca05b8517079bedc8645479101fdaa17de2d0fa06a1633288112db2
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
-      # 1. Checkout application source code
+      # 1. Checkout your application
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Build using nRF Connect SDK
+      # 2. Download the exact NCS release
+      - name: Install NCS v2.9.0
+        run: |
+          west init \
+            -m https://github.com/nrfconnect/sdk-nrf \
+            --mr v2.9.0 \
+            "$RUNNER_TEMP/ncs"
+
+          cd "$RUNNER_TEMP/ncs"
+          west update
+
+      # 3. Compile with Sysbuild
       - name: Build firmware
         run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workdir/project" \
-            "${{ env.SDK_IMAGE }}" \
-            west build \
-              -p always \
-              -b "${{ env.BOARD }}" \
-              /workdir/project \
-              --build-dir /workdir/project/build \
-              -- -DNCS_TOOLCHAIN_VERSION="NONE" \
-              -DCONFIG_DEBUG_THREAD_INFO=y
+          cd "$RUNNER_TEMP/ncs"
 
-      - name: Check SDK repository revisions
+          west build \
+            -p always \
+            --sysbuild \
+            -b nrf52840dk/nrf52840 \
+            "$GITHUB_WORKSPACE" \
+            --build-dir "$GITHUB_WORKSPACE/build"
+
+      # 4. Locate firmware
+      - name: Locate firmware files
         run: |
-          docker run --rm \
-            --entrypoint /bin/bash \
-            "${{ env.SDK_IMAGE }}" \
-            -c '
-              set -e
-
-              # Initialize Nordic toolchain environment
-              source <(nrfutil toolchain-manager env --as-script)
-
-              cd /workdir
-
-              echo "=== Available tools ==="
-              command -v git
-              command -v west
-
-              echo "=== NCS revision ==="
-              git -C nrf rev-parse HEAD
-
-              echo "=== Zephyr revision ==="
-              git -C zephyr rev-parse HEAD
-
-              echo "=== All SDK repository revisions ==="
-              west list -f "{name}: {sha}"
-            '
-
-      # - name: Build firmware
-      #   uses: ./.github/actions/ncs-build
-      #   with:
-      #     board: nrf52840dk/nrf52840
-      #     build_dir: build
-
-      - name: Locate generated firmware
-        run: |
-          echo "Searching for firmware files..."
           find build -type f \( \
             -name "*.hex" -o \
             -name "*.bin" -o \
             -name "*.elf" \
           \) -print
 
-      # 3. Verify build output
-      - name: Check firmware files
-        run: |
-          ls -lh build/project/zephyr/
-          test -f build/project/zephyr/zephyr.hex
-          test -f build/project/zephyr/zephyr.bin
-          test -f build/project/zephyr/zephyr.elf
-      
-      - name: Get firmware version
-        id: version
-        run: |
-          VERSION_MAJOR=$(awk -F '=' '/^VERSION_MAJOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
-          VERSION_MINOR=$(awk -F '=' '/^VERSION_MINOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
-          PATCHLEVEL=$(awk -F '=' '/^PATCHLEVEL/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
-          VERSION_TWEAK=$(awk -F '=' '/^VERSION_TWEAK/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
-
-          VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}+${VERSION_TWEAK}"
-
-          echo "Firmware version: $VERSION"
-          echo "firmware_version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      # 4. Upload compiled firmware
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nrf52840dk-firmware
-          path: |
-            build/project/zephyr/zephyr.hex
-            build/project/zephyr/zephyr.bin
-            build/project/zephyr/zephyr.elf
-            build/project/zephyr/zephyr.map
-          if-no-files-found: error
-          retention-days: 30
-
-  create-release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ needs.build.outputs.firmware_version }}
-          name: Release v${{ needs.build.outputs.firmware_version }}
-          target_commitish: ${{ github.sha }}
-          prerelease: false
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: |
-            artifacts/**/*.hex
-            artifacts/**/*.bin
-            artifacts/**/*.elf
-            artifacts/**/*.map
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
