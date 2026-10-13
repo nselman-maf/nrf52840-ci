@@ -1,0 +1,26 @@
+name: 'Custom NCS Build'
+description: 'Build nRF Connect SDK v2.9.0 with Sysbuild'
+
+inputs:
+  board:
+    description: 'Board target'
+    required: true
+
+  build_dir:
+    description: 'Build output directory'
+    required: false
+    default: 'build'
+
+runs:
+  using: 'docker'
+  image: 'docker://sergeyladanov/nrf-connect-sdk:v2.9.0'
+  args:
+    - west
+    - build
+    - --build-dir
+    - ${{ inputs.build_dir }}
+    - .
+    - --pristine
+    - --board
+    - ${{ inputs.board }}
+    - --sysbuild
