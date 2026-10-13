@@ -49,7 +49,7 @@ jobs:
         uses: ./.github/actions/ncs-build
         with:
           board: nrf52840dk/nrf52840
-          build_dir: /workdir/project/build
+          build_dir: build
 
       - name: Locate generated firmware
         run: |
