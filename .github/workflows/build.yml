@@ -53,17 +53,23 @@ jobs:
             -c '
               set -e
 
+              # Initialize Nordic toolchain environment
+              source <(nrfutil toolchain-manager env --as-script)
+
+              cd /workdir
+
+              echo "=== Available tools ==="
+              command -v git
+              command -v west
+
               echo "=== NCS revision ==="
-              git -C /workdir/nrf rev-parse HEAD
+              git -C nrf rev-parse HEAD
 
               echo "=== Zephyr revision ==="
-              git -C /workdir/zephyr rev-parse HEAD
+              git -C zephyr rev-parse HEAD
 
-              echo "=== HAL Nordic revision ==="
-              git -C /workdir/modules/hal/nordic rev-parse HEAD
-
-              echo "=== NCS version ==="
-              git -C /workdir/nrf describe --tags --always
+              echo "=== All SDK repository revisions ==="
+              west list -f "{name}: {sha}"
             '
 
       # - name: Build firmware
