@@ -48,8 +48,23 @@ jobs:
       - name: Check SDK repository revisions
         run: |
           docker run --rm \
+            --entrypoint /bin/bash \
             "${{ env.SDK_IMAGE }}" \
-            west list -f '{name}: {sha}'
+            -c '
+              set -e
+
+              echo "=== NCS revision ==="
+              git -C /workdir/nrf rev-parse HEAD
+
+              echo "=== Zephyr revision ==="
+              git -C /workdir/zephyr rev-parse HEAD
+
+              echo "=== HAL Nordic revision ==="
+              git -C /workdir/modules/hal/nordic rev-parse HEAD
+
+              echo "=== NCS version ==="
+              git -C /workdir/nrf describe --tags --always
+            '
 
       # - name: Build firmware
       #   uses: ./.github/actions/ncs-build
