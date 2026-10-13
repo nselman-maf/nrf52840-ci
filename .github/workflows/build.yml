@@ -209,3 +209,15 @@ jobs:
             -name "*.elf" \
           \) -print
 
+      # 4. Upload compiled firmware
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nrf52840dk-firmware
+          path: |
+            build/project/nrf52840-ci/zephyr.hex
+            build/project/nrf52840-ci/zephyr.bin
+            build/project/nrf52840-ci/zephyr.elf
+            build/project/nrf52840-ci/zephyr.map
+          if-no-files-found: error
+          retention-days: 30
