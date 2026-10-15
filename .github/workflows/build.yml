@@ -189,6 +189,16 @@ jobs:
           west update
 
       # 3. Compile with Sysbuild
+      # - name: Build firmware
+      #   run: |
+      #     cd "$RUNNER_TEMP/ncs"
+
+      #     west build \
+      #       -p always \
+      #       --sysbuild \
+      #       -b nrf52840dk/nrf52840 \
+      #       "$GITHUB_WORKSPACE" \
+      #       --build-dir "$GITHUB_WORKSPACE/build"
       - name: Build firmware
         run: |
           cd "$RUNNER_TEMP/ncs"
@@ -198,7 +208,11 @@ jobs:
             --sysbuild \
             -b nrf52840dk/nrf52840 \
             "$GITHUB_WORKSPACE" \
-            --build-dir "$GITHUB_WORKSPACE/build"
+            --build-dir "$GITHUB_WORKSPACE/build" \
+            -- \
+            -DDEBUG_THREAD_INFO=On \
+            -DCONFIG_DEBUG_THREAD_INFO=y \
+            '-Dnrf52840-ci_DEBUG_THREAD_INFO=On'
 
       # 4. Locate firmware
       - name: Locate firmware files
