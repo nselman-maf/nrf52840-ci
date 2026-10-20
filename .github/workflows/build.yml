@@ -199,6 +199,13 @@ jobs:
       #       -b nrf52840dk/nrf52840 \
       #       "$GITHUB_WORKSPACE" \
       #       --build-dir "$GITHUB_WORKSPACE/build"
+      - name: Check SDK repository revisions
+        run: |
+          cd "$RUNNER_TEMP/ncs"
+          
+          echo "=== All SDK repository revisions ==="
+          west list -f "{name}: {sha}"
+
       - name: Build firmware
         run: |
           cd "$RUNNER_TEMP/ncs"
@@ -213,11 +220,6 @@ jobs:
             -DDEBUG_THREAD_INFO=On \
             -DCONFIG_DEBUG_THREAD_INFO=y \
             '-Dnrf52840-ci_DEBUG_THREAD_INFO=On'
-
-      - name: Check SDK repository revisions
-        run: |
-          echo "=== All SDK repository revisions ==="
-          west list -f "{name}: {sha}"
 
       # 4. Locate firmware
       - name: Locate firmware files
