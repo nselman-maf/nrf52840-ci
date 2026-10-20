@@ -214,6 +214,19 @@ jobs:
             -DCONFIG_DEBUG_THREAD_INFO=y \
             '-Dnrf52840-ci_DEBUG_THREAD_INFO=On'
 
+      - name: Get firmware version
+        id: version
+        run: |
+          VERSION_MAJOR=$(awk -F '=' '/^VERSION_MAJOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          VERSION_MINOR=$(awk -F '=' '/^VERSION_MINOR/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          PATCHLEVEL=$(awk -F '=' '/^PATCHLEVEL/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+          VERSION_TWEAK=$(awk -F '=' '/^VERSION_TWEAK/ {gsub(/[[:space:]]/, "", $2); print $2}' VERSION)
+
+          VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}+${VERSION_TWEAK}"
+
+          echo "Firmware version: $VERSION"
+          echo "firmware_version=$VERSION" >> "$GITHUB_OUTPUT"
+
       # 4. Locate firmware
       - name: Locate firmware files
         run: |
