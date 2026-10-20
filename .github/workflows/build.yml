@@ -216,30 +216,8 @@ jobs:
 
       - name: Check SDK repository revisions
         run: |
-          docker run --rm \
-            --entrypoint /bin/bash \
-            "${{ env.SDK_IMAGE }}" \
-            -c '
-              set -e
-
-              # Initialize Nordic toolchain environment
-              source <(nrfutil toolchain-manager env --as-script)
-
-              cd /workdir
-
-              echo "=== Available tools ==="
-              command -v git
-              command -v west
-
-              echo "=== NCS revision ==="
-              git -C nrf rev-parse HEAD
-
-              echo "=== Zephyr revision ==="
-              git -C zephyr rev-parse HEAD
-
-              echo "=== All SDK repository revisions ==="
-              west list -f "{name}: {sha}"
-            '
+          echo "=== All SDK repository revisions ==="
+          west list -f "{name}: {sha}"
 
       # 4. Locate firmware
       - name: Locate firmware files
