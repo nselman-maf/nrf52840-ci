@@ -188,10 +188,10 @@ jobs:
 
           ls -lh build
 
-          test -f build/$GITHUB_WORKSPACE/zephyr/zephyr.hex
-          test -f build/$GITHUB_WORKSPACE/zephyr/zephyr.bin
-          test -f build/$GITHUB_WORKSPACE/zephyr/zephyr.elf
-          test -f build/$GITHUB_WORKSPACE/zephyr/zephyr.map
+          test -f build/nrf52840-ci/zephyr/zephyr.hex
+          test -f build/nrf52840-ci/zephyr/zephyr.bin
+          test -f build/nrf52840-ci/zephyr/zephyr.elf
+          test -f build/nrf52840-ci/zephyr/zephyr.map
 
       # 6. Extract firmware version
       - name: Get firmware version
@@ -215,10 +215,10 @@ jobs:
         with:
           name: nrf52840dk-firmware
           path: |
-            build/$GITHUB_WORKSPACE/zephyr/zephyr.hex
-            build/$GITHUB_WORKSPACE/zephyr/zephyr.bin
-            build/$GITHUB_WORKSPACE/zephyr/zephyr.elf
-            build/$GITHUB_WORKSPACE/zephyr/zephyr.map
+            build/nrf52840-ci/zephyr/zephyr.hex
+            build/nrf52840-ci/zephyr/zephyr.bin
+            build/nrf52840-ci/zephyr/zephyr.elf
+            build/nrf52840-ci/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
 
