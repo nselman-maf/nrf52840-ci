@@ -165,7 +165,7 @@ jobs:
             -p always \
             -b "$BOARD" \
             -s "$GITHUB_WORKSPACE" \
-            -d "$GITHUB_WORKSPACE/build/project" \
+            -d "$GITHUB_WORKSPACE/build" \
             -- \
             -DNCS_TOOLCHAIN_VERSION=NONE \
             -DCONFIG_DEBUG_THREAD_INFO=y
@@ -174,7 +174,7 @@ jobs:
       - name: Locate generated firmware
         run: |
           echo "Searching for firmware files..."
-          find build/project -type f \( \
+          find build -type f \( \
             -name "*.hex" -o \
             -name "*.bin" -o \
             -name "*.elf" -o \
@@ -186,7 +186,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ls -lh build/project/zephyr/
+          ls -lh build
 
           test -f build/project/zephyr/zephyr.hex
           test -f build/project/zephyr/zephyr.bin
