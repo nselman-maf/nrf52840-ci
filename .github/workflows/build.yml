@@ -168,7 +168,9 @@ jobs:
             -d "$GITHUB_WORKSPACE/build" \
             -- \
             -DNCS_TOOLCHAIN_VERSION=NONE \
-            -DCONFIG_DEBUG_THREAD_INFO=y
+            -DDEBUG_THREAD_INFO=On \
+            -DCONFIG_DEBUG_THREAD_INFO=y \
+            -Dnrf52840-ci_DEBUG_THREAD_INFO=On
 
       # 5. Verify build output
       - name: Check firmware files
