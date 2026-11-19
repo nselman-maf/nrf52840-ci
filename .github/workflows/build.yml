@@ -170,29 +170,6 @@ jobs:
             -DNCS_TOOLCHAIN_VERSION=NONE \
             -DCONFIG_DEBUG_THREAD_INFO=y
 
-      # 4. Locate generated firmware
-      - name: Locate generated firmware
-        run: |
-          echo "Searching for firmware files..."
-          find build -type f \( \
-            -name "*.hex" -o \
-            -name "*.bin" -o \
-            -name "*.elf" -o \
-            -name "*.map" \
-          \) -print
-
-      # # Get project name
-      # - name: Get project name
-      #   id: project
-      #   run: |
-      #     set -euo pipefail
-
-      #     PROJECT_NAME=$(find build -type f -name zephyr.hex \
-      #       -printf '%h\n' | head -n 1 | xargs dirname | xargs dirname | xargs basename)
-
-      #     echo "Project name: $PROJECT_NAME"
-      #     echo "project_name=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
-
       # 5. Verify build output
       - name: Check firmware files
         run: |
@@ -200,6 +177,7 @@ jobs:
 
           ls -lh build
 
+          test -f "build/merged.hex"
           test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.hex"
           test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.bin"
           test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.elf"
@@ -227,6 +205,7 @@ jobs:
         with:
           name: nrf52840dk-firmware
           path: |
+            build/merged.hex
             build/${{ github.event.repository.name }}/zephyr/zephyr.hex
             build/${{ github.event.repository.name }}/zephyr/zephyr.bin
             build/${{ github.event.repository.name }}/zephyr/zephyr.elf
