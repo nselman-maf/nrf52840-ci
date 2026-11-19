@@ -181,6 +181,18 @@ jobs:
             -name "*.map" \
           \) -print
 
+      # Get project name
+      - name: Get project name
+        id: project
+        run: |
+          set -euo pipefail
+
+          PROJECT_NAME=$(find build -type f -name zephyr.hex \
+            -printf '%h\n' | head -n 1 | xargs dirname | xargs dirname | xargs basename)
+
+          echo "Project name: $PROJECT_NAME"
+          echo "project_name=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
+
       # 5. Verify build output
       - name: Check firmware files
         run: |
@@ -188,10 +200,10 @@ jobs:
 
           ls -lh build
 
-          test -f "build/$GITHUB_WORKSPACE/zephyr/zephyr.hex"
-          test -f "build/$GITHUB_WORKSPACE/zephyr/zephyr.bin"
-          test -f "build/$GITHUB_WORKSPACE/zephyr/zephyr.elf"
-          test -f "build/$GITHUB_WORKSPACE/zephyr/zephyr.map"
+          test -f "build/$PROJECT_NAME/zephyr/zephyr.hex"
+          test -f "build/$PROJECT_NAME/zephyr/zephyr.bin"
+          test -f "build/$PROJECT_NAME/zephyr/zephyr.elf"
+          test -f "build/$PROJECT_NAME/zephyr/zephyr.map"
 
       # 6. Extract firmware version
       - name: Get firmware version
@@ -215,10 +227,10 @@ jobs:
         with:
           name: nrf52840dk-firmware
           path: |
-            "build/$GITHUB_WORKSPACE/zephyr/zephyr.hex"
-            "build/$GITHUB_WORKSPACE/zephyr/zephyr.bin"
-            "build/$GITHUB_WORKSPACE/zephyr/zephyr.elf"
-            "build/$GITHUB_WORKSPACE/zephyr/zephyr.map"
+            build/$PROJECT_NAME/zephyr/zephyr.hex
+            build/$PROJECT_NAME/zephyr/zephyr.bin
+            build/$PROJECT_NAME/zephyr/zephyr.elf
+            build/$PROJECT_NAME/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
 
