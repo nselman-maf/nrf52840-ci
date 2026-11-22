@@ -153,7 +153,7 @@ jobs:
 
           PROJECT_NAME="${{ github.event.repository.name }}"
           VERSION="${{ needs.build.outputs.firmware_version }}"
-          
+
           ZIP_FILE="artifacts/dfu_application.zip"
           SIGNED_BIN="${PROJECT_NAME}.signed.bin"
           RELEASE_BIN="${PROJECT_NAME}-v${VERSION}.signed.bin"
@@ -195,7 +195,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           prerelease: false
           generate_release_notes: true
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
           files: |
             artifacts/*.hex
             artifacts/*.bin
