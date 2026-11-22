@@ -126,6 +126,16 @@ jobs:
       # 1. Checkout application source code
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history + tags, so describe-style versioning works
+
+      # 1b. Let git work inside the container
+      - name: Trust workspace for git
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Fail early if the hash still can't be read
+          git -C "$GITHUB_WORKSPACE" rev-parse --short=12 HEAD
 
       # 2. Verify toolchain
       - name: Verify toolchain
