@@ -120,6 +120,7 @@ jobs:
           name: nrf52840-firmware
           path: |
             build/merged.hex
+            build/dfu_application.zip
             build/${{ github.event.repository.name }}/zephyr/zephyr.hex
             build/${{ github.event.repository.name }}/zephyr/zephyr.bin
             build/${{ github.event.repository.name }}/zephyr/zephyr.elf
@@ -145,6 +146,31 @@ jobs:
 
       - name: Display downloaded files
         run: ls -R artifacts
+
+      - name: Extract and rename signed DFU firmware
+        run: |
+          set -euo pipefail
+
+          PROJECT_NAME="${{ github.event.repository.name }}"
+          VERSION="${{ needs.build.outputs.firmware_version }}"
+          
+          ZIP_FILE="artifacts/dfu_application.zip"
+          SIGNED_BIN="${PROJECT_NAME}.signed.bin"
+          RELEASE_BIN="${PROJECT_NAME}-v${VERSION}.signed.bin"
+
+          if [[ -f "$ZIP_FILE" ]]; then
+            echo "DFU ZIP found: $ZIP_FILE"
+
+            # Extract only the signed binary into the artifacts directory
+            unzip -j "$ZIP_FILE" "$SIGNED_BIN" -d artifacts/
+
+            # Rename the extracted firmware
+            mv "artifacts/$SIGNED_BIN" "artifacts/$RELEASE_BIN"
+
+            echo "Signed firmware prepared: $RELEASE_BIN"
+          else
+            echo "No DFU ZIP found. Skipping signed firmware extraction."
+          fi
 
       - name: Rename firmware files
         run: |
@@ -172,9 +198,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             artifacts/*.hex
-            # artifacts/*.bin
-            # artifacts/*.elf
-            # artifacts/*.map
+            artifacts/*.bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
