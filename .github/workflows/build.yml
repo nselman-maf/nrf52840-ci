@@ -1,95 +1,4 @@
-# name: Build nRF52840 DK Firmware
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-
-# jobs:
-#   build:
-#     runs-on: ubuntu-22.04
-
-#     container:
-#       image: ghcr.io/nrfconnect/sdk-nrf-toolchain@sha256:7e9b61475ca05b8517079bedc8645479101fdaa17de2d0fa06a1633288112db2
-
-#     defaults:
-#       run:
-#         shell: bash
-
-#     steps:
-#       # 1. Checkout your application
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       # 2. Download the exact NCS release
-#       - name: Install NCS v2.9.0
-#         run: |
-#           west init \
-#             -m https://github.com/nrfconnect/sdk-nrf \
-#             --mr v2.9.0 \
-#             "$RUNNER_TEMP/ncs"
-
-#           cd "$RUNNER_TEMP/ncs"
-#           west update
-
-#       # 3. Compile with Sysbuild
-#       # - name: Build firmware
-#       #   run: |
-#       #     cd "$RUNNER_TEMP/ncs"
-
-#       #     west build \
-#       #       -p always \
-#       #       --sysbuild \
-#       #       -b nrf52840dk/nrf52840 \
-#       #       "$GITHUB_WORKSPACE" \
-#       #       --build-dir "$GITHUB_WORKSPACE/build"
-#       - name: Check SDK repository revisions
-#         run: |
-#           cd "$RUNNER_TEMP/ncs"
-
-#           echo "=== All SDK repository revisions ==="
-#           west list -f "{name}: {sha}"
-
-#       - name: Build firmware
-#         run: |
-#           cd "$RUNNER_TEMP/ncs"
-
-#           west build \
-#             -p always \
-#             --sysbuild \
-#             -b nrf52840dk/nrf52840 \
-#             "$GITHUB_WORKSPACE" \
-#             --build-dir "$GITHUB_WORKSPACE/build" \
-#             -- \
-#             -DDEBUG_THREAD_INFO=On \
-#             -DCONFIG_DEBUG_THREAD_INFO=y \
-#             '-Dnrf52840-ci_DEBUG_THREAD_INFO=On'
-
-#       # 4. Locate firmware
-#       - name: Locate firmware files
-#         run: |
-#           find build -type f \( \
-#             -name "*.hex" -o \
-#             -name "*.bin" -o \
-#             -name "*.elf" \
-#           \) -print
-
-#       # 4. Upload compiled firmware
-#       - name: Upload firmware artifacts
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: nrf52840dk-firmware
-#           path: |
-#             build/nrf52840-ci/zephyr/zephyr.hex
-#             build/nrf52840-ci/zephyr/zephyr.bin
-#             build/nrf52840-ci/zephyr/zephyr.elf
-#             build/nrf52840-ci/zephyr/zephyr.map
-#           if-no-files-found: error
-#           retention-days: 30
-
-
-name: Build nRF52840 DK Firmware
+name: Build nRF52840 firmware
 
 on:
   push:
@@ -123,13 +32,11 @@ jobs:
       firmware_version: ${{ steps.version.outputs.firmware_version }}
 
     steps:
-      # 1. Checkout application source code
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0          # full history + tags, so describe-style versioning works
 
-      # 1b. Let git work inside the container
       - name: Trust workspace for git
         run: |
           set -euo pipefail
@@ -137,15 +44,13 @@ jobs:
           # Fail early if the hash still can't be read
           git -C "$GITHUB_WORKSPACE" rev-parse --short=12 HEAD
 
-      # 2. Verify toolchain
       - name: Verify toolchain
         run: |
           set -euo pipefail
           west --version
           arm-zephyr-eabi-gcc --version
 
-      # 3. Initialize SDK and build firmware
-      - name: Build firmware
+      - name: Initialize SDK and build firmware
         run: |
           set -euo pipefail
 
@@ -182,7 +87,6 @@ jobs:
             -DCONFIG_DEBUG_THREAD_INFO=y \
             -Dnrf52840-ci_DEBUG_THREAD_INFO=On
 
-      # 5. Verify build output
       - name: Check firmware files
         run: |
           set -euo pipefail
@@ -195,7 +99,6 @@ jobs:
           test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.elf"
           test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.map"
 
-      # 6. Extract firmware version
       - name: Get firmware version
         id: version
         run: |
@@ -211,11 +114,10 @@ jobs:
           echo "Firmware version: $VERSION"
           echo "firmware_version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # 7. Upload compiled firmware
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nrf52840dk-firmware
+          name: nrf52840-firmware
           path: |
             build/merged.hex
             build/${{ github.event.repository.name }}/zephyr/zephyr.hex
@@ -225,7 +127,6 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # 8. Create a GitHub Release
   create-release:
     name: Create GitHub Release
     needs: build
@@ -239,11 +140,26 @@ jobs:
       - name: Download firmware artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nrf52840dk-firmware
+          name: nrf52840-firmware
           path: artifacts
 
       - name: Display downloaded files
         run: ls -R artifacts
+
+      - name: Rename firmware files
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ needs.build.outputs.firmware_version }}"
+          PROJECT_NAME="${{ github.event.repository.name }}"
+          RELEASE_NAME="nrf52840-firmware-v${VERSION}"
+
+          # Rename merged firmware
+          mv "artifacts/merged.hex" \
+             "artifacts/${RELEASE_NAME}.hex"
+
+          echo "=== Release files ==="
+          ls -lh artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -255,10 +171,10 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            artifacts/**/*.hex
-            artifacts/**/*.bin
-            artifacts/**/*.elf
-            artifacts/**/*.map
+            artifacts/*.hex
+            # artifacts/*.bin
+            # artifacts/*.elf
+            # artifacts/*.map
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
