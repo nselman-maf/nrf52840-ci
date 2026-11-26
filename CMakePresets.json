@@ -26,9 +26,9 @@
             "cacheVariables": {
                 "NCS_TOOLCHAIN_VERSION": "NONE",
                 "BOARD": "nrf52840dk/nrf52840",
-                "DEBUG_THREAD_INFO": true,
-                "CONFIG_DEBUG_THREAD_INFO": true,
-                "nrf52840-ci_DEBUG_THREAD_INFO": true
+                "DEBUG_THREAD_INFO": false,
+                "CONFIG_DEBUG_THREAD_INFO": false,
+                "nrf52840-ci_DEBUG_THREAD_INFO": false
             }
         }
     ]
