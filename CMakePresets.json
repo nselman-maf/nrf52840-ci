@@ -22,7 +22,7 @@
             "name": "release",
             "displayName": "Release build for nRF52840",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build",
+            "binaryDir": "${sourceDir}/release",
             "cacheVariables": {
                 "NCS_TOOLCHAIN_VERSION": "NONE",
                 "BOARD": "nrf52840dk/nrf52840",

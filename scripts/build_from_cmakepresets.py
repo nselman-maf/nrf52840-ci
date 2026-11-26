@@ -80,15 +80,17 @@ def build_with_preset():
     cmake_args = []
 
     for name, value in cache_variables.items():
-
-        # CMake supports typed cache variable objects.
         if isinstance(value, dict):
             value = value.get("value")
 
-        if isinstance(value, bool):
-            value = "ON" if value else "OFF"
+        # Skip false boolean options
+        if value is False:
+            continue
 
-        # BOARD is passed through west's -b option.
+        # Convert true booleans to CMake-compatible values
+        if value is True:
+            value = "ON"
+
         if name == "BOARD":
             continue
 
