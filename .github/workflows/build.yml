@@ -50,6 +50,43 @@ jobs:
           west --version
           arm-zephyr-eabi-gcc --version
 
+      # - name: Initialize SDK and build firmware
+      #   run: |
+      #     set -euo pipefail
+
+      #     # Initialize the SDK workspace at the requested revision.
+      #     west init \
+      #       -m https://github.com/nrfconnect/sdk-nrf \
+      #       --mr "$NCS_VERSION" \
+      #       /tmp/ncs
+
+      #     cd /tmp/ncs
+
+      #     # Fetch the SDK repositories specified by the manifest.
+      #     west update
+
+      #     # Verify repository revisions.
+      #     echo "=== NCS revision ==="
+      #     git -C nrf rev-parse HEAD
+
+      #     echo "=== Zephyr revision ==="
+      #     git -C zephyr rev-parse HEAD
+
+      #     echo "=== All SDK repository revisions ==="
+      #     west list -f "{name}: {sha}"
+
+      #     # Build the application.
+      #     west build \
+      #       -p always \
+      #       -b "$BOARD" \
+      #       -s "$GITHUB_WORKSPACE" \
+      #       -d "$GITHUB_WORKSPACE/build" \
+      #       -- \
+      #       -DNCS_TOOLCHAIN_VERSION=NONE \
+      #       -DDEBUG_THREAD_INFO=On \
+      #       -DCONFIG_DEBUG_THREAD_INFO=y \
+      #       -Dnrf52840-ci_DEBUG_THREAD_INFO=On
+
       - name: Initialize SDK and build firmware
         run: |
           set -euo pipefail
@@ -76,28 +113,20 @@ jobs:
           west list -f "{name}: {sha}"
 
           # Build the application.
-          west build \
-            -p always \
-            -b "$BOARD" \
-            -s "$GITHUB_WORKSPACE" \
-            -d "$GITHUB_WORKSPACE/build" \
-            -- \
-            -DNCS_TOOLCHAIN_VERSION=NONE \
-            -DDEBUG_THREAD_INFO=On \
-            -DCONFIG_DEBUG_THREAD_INFO=y \
-            -Dnrf52840-ci_DEBUG_THREAD_INFO=On
+          python3 "$GITHUB_WORKSPACE/scripts/build_firmware.py"
 
       - name: Check firmware files
         run: |
           set -euo pipefail
 
-          ls -lh build
+          echo "Build directory: $BUILD_DIR"
+          ls -lh "$BUILD_DIR"
 
-          test -f "build/merged.hex"
-          test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.hex"
-          test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.bin"
-          test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.elf"
-          test -f "build/${{ github.event.repository.name }}/zephyr/zephyr.map"
+          test -f "$BUILD_DIR/merged.hex"
+          test -f "$BUILD_DIR/${{ github.event.repository.name }}/zephyr/zephyr.hex"
+          test -f "$BUILD_DIR/${{ github.event.repository.name }}/zephyr/zephyr.bin"
+          test -f "$BUILD_DIR/${{ github.event.repository.name }}/zephyr/zephyr.elf"
+          test -f "$BUILD_DIR/${{ github.event.repository.name }}/zephyr/zephyr.map"
 
       - name: Get firmware version
         id: version
@@ -119,12 +148,12 @@ jobs:
         with:
           name: nrf52840-firmware
           path: |
-            build/merged.hex
-            build/dfu_application.zip
-            build/${{ github.event.repository.name }}/zephyr/zephyr.hex
-            build/${{ github.event.repository.name }}/zephyr/zephyr.bin
-            build/${{ github.event.repository.name }}/zephyr/zephyr.elf
-            build/${{ github.event.repository.name }}/zephyr/zephyr.map
+            ${{ env.BUILD_DIR }}/merged.hex
+            ${{ env.BUILD_DIR }}/dfu_application.zip
+            ${{ env.BUILD_DIR }}/${{ github.event.repository.name }}/zephyr/zephyr.hex
+            ${{ env.BUILD_DIR }}/${{ github.event.repository.name }}/zephyr/zephyr.bin
+            ${{ env.BUILD_DIR }}/${{ github.event.repository.name }}/zephyr/zephyr.elf
+            ${{ env.BUILD_DIR }}/${{ github.event.repository.name }}/zephyr/zephyr.map
           if-no-files-found: error
           retention-days: 30
 
