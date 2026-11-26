@@ -113,7 +113,7 @@ jobs:
           west list -f "{name}: {sha}"
 
           # Build the application.
-          python3 "$GITHUB_WORKSPACE/scripts/build_from_cmakepresets.py"
+          python3 -u "$GITHUB_WORKSPACE/scripts/build_from_cmakepresets.py"
 
       - name: Check firmware files
         run: |
