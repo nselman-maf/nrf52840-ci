@@ -83,16 +83,14 @@ def build_with_preset():
         if isinstance(value, dict):
             value = value.get("value")
 
-        # Skip false boolean options
-        if value is False:
-            continue
-
-        # Convert true booleans to CMake-compatible values
-        if value is True:
-            value = "ON"
-
         if name == "BOARD":
             continue
+
+        if isinstance(value, bool):
+            if name.startswith("CONFIG_"):
+                value = "y" if value else "n"
+            else:
+                value = "On" if value else "Off"
 
         cmake_args.append(f"-D{name}={value}")
 
@@ -143,9 +141,9 @@ def build_without_preset():
         str(build_dir),
         "--",
         "-DNCS_TOOLCHAIN_VERSION=NONE",
-        "-DDEBUG_THREAD_INFO=On",
-        "-DCONFIG_DEBUG_THREAD_INFO=y",
-        "-Dnrf52840-ci_DEBUG_THREAD_INFO=On",
+        "-DDEBUG_THREAD_INFO=Off",
+        "-DCONFIG_DEBUG_THREAD_INFO=n",
+        "-Dnrf52840-ci_DEBUG_THREAD_INFO=Off",
     ]
 
     print("CMakePresets.json not found.")
